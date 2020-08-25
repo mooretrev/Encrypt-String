@@ -6,10 +6,10 @@ const {Transform} = require('stream')
 
 const getCipherKey = require('./getCipherKey.js')
 
-function decryptPromise(file, password) {
+function decryptPromise(filePath, password) {
     return new Promise((res, rej) =>{
-        // First, get the initialization vector from the file.
-        const readInitVect = fs.createReadStream(file, { end: 15 })
+        // First, get the initialization vector from the file.        
+        const readInitVect = fs.createReadStream(filePath, { end: 15 })
 
         let initVect
         readInitVect.on('data', (chunk) => {
@@ -19,7 +19,7 @@ function decryptPromise(file, password) {
         // Once we’ve got the initialization vector, we can decrypt the file.
         readInitVect.on('close', () => {
             const cipherKey = getCipherKey(password)
-            const readStream = fs.createReadStream(file, { start: 16 })
+            const readStream = fs.createReadStream(filePath, { start: 16 })
             const decipher = crypto.createDecipheriv('aes256', cipherKey, initVect)
             const unzip = zlib.createUnzip()
 
@@ -33,7 +33,6 @@ function decryptPromise(file, password) {
                 res(result)
             })
 
-
             readStream
             .pipe(decipher)
             .pipe(unzip)
@@ -44,7 +43,3 @@ function decryptPromise(file, password) {
 }
 
 module.exports = decryptPromise
-
-// decryptPromise(path.join(__dirname, '../tokens/accounts.json.enc'), "aPP1e;oG12")
-// .then((data) =>{console.log(data)})
-// .catch((err) =>{console.log(err)})
